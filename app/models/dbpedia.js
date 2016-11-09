@@ -1,7 +1,7 @@
-const config = require('../../config'),
-      sparqlQueryBuilder = require('../utils/sparql-query-builder'),
-      sparqlClient = require('sparql-client'),
-      util = require('util');
+var config = require('../../config');
+var sparqlQueryBuilder = require('../utils/sparql-query-builder');
+var sparqlClient = require('sparql-client');
+var util = require('util');
 
 /* To be moved to its own file */
 class Resource {
