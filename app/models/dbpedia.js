@@ -3,41 +3,65 @@ var sparqlQueryBuilder = require('../utils/sparql-query-builder');
 var sparqlClient = require('sparql-client');
 var util = require('util');
 
-/* To be moved to its own file */
-class Resource {
-  constructor(uri, properties = {}, relationships = {}) {
-    this.uri = uri,
-    this.properties = properties;
-    this.relationships = relationships;
-  }
-}
+var Resource = require('./resource');
 
 class DBPedia {
   constructor() {
-    this.resources = {};
-    this.anchor_resources = [];
+    this.resources = new Map(); /* Map of URIs to Resource */
+    this.anchors = new Set(); /* Set of anchor URIs */
   }
 
   addAnchors(anchors) {
-    this.anchor_resources.push(...anchors.filter(anchor => !(anchor in this.anchor_resources)));
+    anchors.forEach(anchor => this.anchors.add(anchor));
   }
 
-  fetch(onSuccess, onFail) {
-    var resources_to_fetch = this.anchor_resources.filter(anchor => !this.resources[anchor]);
-    var query = sparqlQueryBuilder.DBPedia.fetch(resources_to_fetch);
+  addResource(resource) {
+    this.resources.set(resource.uri, resource);
+  }
+
+  getResources() {
+    return this.resources;
+  }
+
+  /* Fetch all neccessary resources for building graphs with anchor points */
+  fetch() {
+    return new Promise((resolve, reject) => {
+      this._fetchByAnchors(
+        [...this.anchors.values()].filter(anchor => !this.resources.has(anchor))
+      ).then(resolve).catch(reject);
+    });
+  }
+
+  _fetchByAnchors(uris, onSuccess, onFail) {
+    var query = sparqlQueryBuilder.DBPedia.fetchByAnchors(uris, true);
     var client = new sparqlClient(config.DBPEDIA_ENDPOINT);
 
-    client.query(query)
-      .execute((err, results) => {
-        if(err) onFail(err);
-        else onSuccess(results);
-      });
-  }
+    return new Promise((resolve, reject) => {
+      client.query(query)
+        .execute((err, results) => {
+          if(err) { reject(err); return; }
+          results.results.bindings.forEach(r => {
+            var resource = this._createResourceFromSparqlResult(r);
+            this.resources.set(resource.uri, resource);
+          });
+          resolve(results);
+        });
+    });
 
-  getResources() { return this.resources; }
+  }
 
   _createResourceFromSparqlResult(result) {
     /* To be implemented */
+    var uri = result.rsc.value;
+
+    var rels_type = result.rels_type.value.split(';');
+    var rels_subj = result.rels_subj.value.split(';');
+    var relationships = rels_subj.reduce((c, v, i) => Object.assign(c, {[v]: rels_type[i]}), {});
+
+    var properties = {};
+
+    var resource = new Resource(uri, properties, relationships);
+    return resource;
   }
 }
 

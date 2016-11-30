@@ -28,6 +28,7 @@
   "homepage": "https://github.com/rellink/knowledge-api#readme",
   "dependencies": {
     "body-parser": "^1.15.2",
+    "compression": "^1.6.2",
     "express": "^4.14.0",
     "sparql-client": "^0.2.0"
   },

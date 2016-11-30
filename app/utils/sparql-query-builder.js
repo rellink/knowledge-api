@@ -1,18 +1,49 @@
-var builders = {
+var builder = {
   DBPedia: {
-    fetch: (uris) => `
-      SELECT ?resource (GROUP_CONCAT(?relationship ; separator=";") as ?r) (GROUP_CONCAT(?property ; separator=";") as ?p)
+    fetch: (rscQuery) => `
+      SELECT ?rsc (GROUP_CONCAT(?rel ; separator=";") as ?rels_type) (GROUP_CONCAT(DISTINCT ?subj ; separator=";") as ?rels_subj)
       WHERE {
-        ?resource ?relationship ?property .
-        ?property rdfs:label ?label .
-        FILTER (langMatches(lang(?label),'en')).
+        ?rsc ?rel ?subj .
+        ?subj rdfs:label ?label .
+        FILTER regex(?subj,'dbpedia.org','i') .
+        FILTER (langMatches(lang(?label),'en')) .
+        ${rscQuery}
       }
-      GROUP BY ?resource
-      VALUES (?resource) {
-        ${uris.map(uri => `(<${uri}>)`).join(' ')}
+      GROUP BY ?rsc
+    `,
+    fetchByAnchors: (uris, incoming = false) => builder.DBPedia.fetch(`
+      {
+        SELECT DISTINCT (?rsc)
+        WHERE {
+          {
+            VALUES (?anchor) { ${uris.map(uri => `(<${uri}>)`).join(' ')} }
+            ?anchor ?rel ?rsc .
+            ?rsc rdfs:label ?label .
+			      FILTER regex(?rsc,'dbpedia.org','i') .
+            FILTER (langMatches(lang(?label),'en')) .
+          }
+          ${incoming ? `
+            UNION
+            {
+              VALUES (?anchor) { ${uris.map(uri => `(<${uri}>)`).join(' ')} }
+              ?rsc ?rel ?anchor .
+              ?rsc rdfs:label ?label .
+  			      FILTER regex(?rsc,'dbpedia.org','i') .
+              FILTER (langMatches(lang(?label),'en')) .
+            }
+          `:``}
+          UNION
+          {
+            VALUES (?anchor) { ${uris.map(uri => `(<${uri}>)`).join(' ')} }
+            BIND (?anchor AS ?rsc)
+          }
+        }
       }
-    `
+    `),
+    fetchByResources: (uris) => builder.DBPedia.fetch(`
+      VALUES (?rsc) { ${uris.map(uri => `(<${uri}>)`).join(' ')} }
+    `)
   }
 }
 
-module.exports = builders;
+module.exports = builder;
