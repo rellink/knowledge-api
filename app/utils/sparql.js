@@ -1,7 +1,7 @@
 var config = require('../../config.js');
 
 var sparql = {
-  resolvePrefix: (uri) => {
+  resolvePrefix(uri) {
     if(uri.indexOf(':') >= 0) {
       var namespace = uri.split(':')[0],
           path = uri.split(':')[1];
@@ -13,7 +13,7 @@ var sparql = {
       return `${PREFIX.dbr}${uri}`;
     }
   },
-  reversePrefix: (uri) => {
+  reversePrefix(uri) {
     /* To be implemented */
   }
 };
@@ -217,6 +217,8 @@ var PREFIX = {
    "yt":"http://gdata.youtube.com/schemas/2007",
    "zem":"http://s.zemanta.com/ns#"
 };
-var REVERSE_PREFIX = Object.keys(PREFIX).reduce((c,v) => Object.assign(c,{[PREFIX[v]]:v}), {});
+var REVERSE_PREFIX = Object.keys(PREFIX).reduce(
+  (c,v) => Object.assign(c, {[PREFIX[v]]: v})
+, {});
 
 module.exports = sparql;

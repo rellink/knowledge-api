@@ -9,11 +9,11 @@ router.get('/', (req, res, next) => {
     res.status(403).send('Usage: /graph?anchors=<comma-separated anchors>');
     return;
   }
+
   var anchors = req.query.anchors.split(',');
-
   var model = new DBPedia();
-  model.addAnchors(anchors.map(id => sparql.resolvePrefix(id)));
 
+  model.addAnchors(anchors.map(id => sparql.resolvePrefix(id)));
   model
     .fetch()
     .then(() => {
