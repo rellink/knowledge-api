@@ -27,8 +27,10 @@ class DBPedia {
   fetch() {
     return new Promise((resolve, reject) => {
       this._fetchByAnchors(
-        [...this.anchors.values()].filter(anchor => !this.resources.has(anchor))
-      ).then(resolve).catch(reject);
+          [...this.anchors.values()].filter(anchor => !this.resources.has(anchor))
+        )
+        .then(resolve)
+        .catch(reject);
     });
   }
 
@@ -47,16 +49,16 @@ class DBPedia {
           resolve(results);
         });
     });
-
   }
 
   _createResourceFromSparqlResult(result) {
-    /* To be implemented */
     var uri = result.rsc.value;
 
     var rels_type = result.rels_type.value.split(';');
     var rels_subj = result.rels_subj.value.split(';');
-    var relationships = rels_subj.reduce((c, v, i) => Object.assign(c, {[v]: rels_type[i]}), {});
+    var relationships = rels_subj.reduce(
+      (c, v, i) => Object.assign(c, {[v]: rels_type[i]}
+    ), {});
 
     var properties = {};
 
